@@ -149,6 +149,43 @@ public class Board {
         }
     }
 
+    // Check check
+    public boolean inCheck(boolean white) {
+        int position;
+        long enemyPieces;
+        if (white) { // Get correct side
+            enemyPieces = getBlackPieces();
+            position = Long.numberOfTrailingZeros(board[WHITE_KING]);
+        }
+        else {
+            enemyPieces = getWhitePieces();
+            position = Long.numberOfTrailingZeros(board[BLACK_KING]);
+        }
+
+        for (int i = 0; i < 64; i++) { // Go through all possible enemy moves
+            if ((enemyPieces & 1L << i) == 0) continue; // Skip empty squares
+            if (getPossibleMoves(i).contains(position)) return true; // Return true if King could be captured
+        }
+        return false;
+    }
+
+    // Full legal move
+    public boolean makeMove(int originSquare, int destinationSquare) {
+        int piece = getPieceAt(originSquare);
+        if (piece == 12) return false; // Return if square empty
+        if (piece < 6 && !whiteToMove || piece > 5 && whiteToMove) return false; // Return if piece is opposing color
+        if (!getPossibleMoves(originSquare).contains(destinationSquare)) return false; // Return if move is impossible
+
+        int temp = getPieceAt(destinationSquare); // Save destination
+        movePiece(originSquare, destinationSquare); // Simulate move
+        if (inCheck(whiteToMove)) { // If King gets into check, restore
+            movePiece(destinationSquare, originSquare);
+            if (temp != 12) board[temp] |= 1L << destinationSquare; // Only restore if square wasn't empty
+            return false;
+        }
+        whiteToMove = !whiteToMove; // Other player's turn
+        return true;
+    }
 
     // Get Functions
     public long getWhitePieces() {
