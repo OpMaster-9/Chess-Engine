@@ -1,6 +1,6 @@
 package de.opmaster.chess;
 
-
+import java.util.ArrayList;
 
 public class Board {
     //Indexes for white Pieces
@@ -32,11 +32,122 @@ public class Board {
     //Movement Functions
     public void movePiece(int originSquare, int destinationSquare) {
         int piece = getPieceAt(originSquare);
-        board[piece] ^= 1l << originSquare;
-        board[piece] |= 1L << destinationSquare;
+        board[piece] ^= 1L << originSquare; //Remove piece at origin
+        board[piece] |= 1L << destinationSquare; //Add piece at destination
     }
 
+    //Direction Arrays
+    private static final int[] KNIGHT_MOVES = {17, 15, 10, 6, -6, -10, -15, -17};
+    private static final int[] BISHOP_DIRECTIONS = {9, 7, -7, -9};
+    private static final int[] ROOK_DIRECTIONS = {8, 1, -1, -8};
+    private static final int[] QUEEN_DIRECTIONS = {9, 8, 7 , 1, -1, -7 ,-8, -9};
 
+    public ArrayList<Integer> getPossibleMoves(int position) {
+        ArrayList<Integer> moves = new ArrayList<>(24);
+
+        long empty = getEmpty();
+        long blackPieces = getBlackPieces();
+        long whitePieces = getWhitePieces();
+        int file = position % 8;
+
+         switch(getPieceAt(position)) {
+             case WHITE_PAWN:
+                 if ((empty & 1L << (position + 8)) != 0) { //1 forward
+                     moves.add(position + 8);
+                     if (position < 16 && position > 7 && (empty & 1L << (position + 16)) != 0) moves.add(position + 16); //2 forward
+                 }
+
+                 if (file > 0 &&(blackPieces & 1L << (position + 7)) != 0) moves.add(position + 7); //Capture left
+                 if (file < 7 &&(blackPieces & 1L << (position + 9)) != 0) moves.add(position + 9); //Capture right
+                 return moves;
+
+             case WHITE_KNIGHT:
+                 directMoves(moves, KNIGHT_MOVES, position, whitePieces);
+                 return moves;
+
+             case WHITE_BISHOP:
+                 slidingMoves(moves, BISHOP_DIRECTIONS, position, empty, blackPieces);
+                 return moves;
+
+             case WHITE_ROOK:
+                 slidingMoves(moves, ROOK_DIRECTIONS, position, empty, blackPieces);
+                 return moves;
+
+             case WHITE_QUEEN:
+                 slidingMoves(moves, QUEEN_DIRECTIONS, position, empty, blackPieces);
+                 return moves;
+
+             case WHITE_KING:
+                 directMoves(moves, QUEEN_DIRECTIONS, position, whitePieces);
+                 return moves;
+
+             case BLACK_PAWN:
+                 if ((empty & 1L << (position - 8)) != 0) { //1 forward
+                     moves.add(position - 8);
+                     if (position < 56 && position > 47 && (empty & 1L << (position - 16)) != 0) moves.add(position - 16); //2 forward
+                 }
+                 if (file > 0 && (whitePieces & 1L << (position - 9)) != 0) moves.add(position - 9); //Capture left
+                 if (file < 7 &&(whitePieces & 1L << (position - 7)) != 0) moves.add(position - 7); //Capture right
+                 return moves;
+
+             case BLACK_KNIGHT:
+                 directMoves(moves, KNIGHT_MOVES, position, blackPieces);
+                 return moves;
+
+             case BLACK_BISHOP:
+                 slidingMoves(moves, BISHOP_DIRECTIONS, position, empty, whitePieces);
+                 return moves;
+
+             case BLACK_ROOK:
+                 slidingMoves(moves, ROOK_DIRECTIONS, position, empty, whitePieces);
+                 return moves;
+
+             case BLACK_QUEEN:
+                 slidingMoves(moves, QUEEN_DIRECTIONS, position, empty, whitePieces);
+                 return moves;
+
+             case BLACK_KING:
+                 directMoves(moves, QUEEN_DIRECTIONS, position, blackPieces);
+                 return moves;
+
+             default:
+                 return moves;
+         }
+    }
+
+    private void directMoves(ArrayList<Integer> moves, int[] directions, int position, long ownPieces) {
+        int file = position % 8;
+        for (int move : directions) {
+            int target = move + position;
+
+            if (target < 0 || target > 63) continue; //Prevent going outside board
+
+            if (Math.abs(file - (target % 8)) > 2) continue; //Prevent wrapping around
+
+            if ((ownPieces & 1L << target) == 0) moves.add(target); //Target is either an enemy piece or empty
+        }
+    }
+
+    private void slidingMoves(ArrayList<Integer> moves, int[] directions, int position, long empty, long enemyPieces) {
+        for(int direction : directions) {
+            int current = position;
+
+            while (true) {
+                current = current + direction;
+
+                if (current < 0 || current > 63) break; //Prevent going outside board
+
+                if (Math.abs((current % 8) - ((current - direction) % 8)) > 1) break; //Prevent wrapping around
+
+                if ((empty & (1L << current)) == 0) { //Stop on contact
+                    if ((enemyPieces & 1L << current) != 0) moves.add(current); //Adding captures
+                    break;
+                }
+
+                moves.add(current);
+            }
+        }
+    }
 
 
     //Get Functions
