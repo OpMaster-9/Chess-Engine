@@ -179,15 +179,14 @@ public class Board {
 
     // Output Functions
     public void printBoard() {
-        char[] abc = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'};
         for (int i = 7; i >= 0; i--) {
-            System.out.print(abc[i] + " ");
+            System.out.print((i + 1) + " ");
             for (int j = 0; j < 8; j++) {
                 System.out.print(getCharAt(i * 8 + j) + " ");
             }
             System.out.println();
         }
-        System.out.println("  1 2 3 4 5 6 7 8");
+        System.out.println("  a b c d e f g h");
     }
 
     public char getCharAt(int square) {
